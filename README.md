@@ -86,7 +86,7 @@ def load_image(image_url):
         return create_random_image(224, 224)
 ```
 
-In my testing experienxce I found out that many URLs are not responsive and break the training loop. To counter this challenge I opted to create a random image of the same size to be given to the model
+:heavy_exclamation_mark: In my testing experienxce I found out that many URLs are not responsive and break the training loop. To counter this challenge I opted to create a random image of the same size to be given to the model
 other than simply a black image.
 
 ![](./assests/Capture5.JPG)

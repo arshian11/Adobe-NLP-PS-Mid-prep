@@ -41,7 +41,7 @@ the token length distribution so that we can create a uniform token length for t
 ![](./assests/download.png)
 
 # 🌟 **Solution**
-Task-1: Behavior Simulation
+## Task-1: Behavior Simulation
 - Given the content of a tweet (text, company, username, media URLs, timestamp), the
 task is to predict its user engagement, measured by likes.
 
@@ -85,7 +85,7 @@ def load_image(image_url):
         return create_random_image(224, 224)
 ```
 
-In my testing experienxce I found out that many URLs are not responsive and break the training loop. To counter this challenge I opted to create a random image of the same size to bee given ot the model
+In my testing experienxce I found out that many URLs are not responsive and break the training loop. To counter this challenge I opted to create a random image of the same size to be given to the model
 other than simply a black image.
 
 ![](./assests/Capture5.JPG)
@@ -97,3 +97,42 @@ def create_random_image(width, height):
     return random_image
 ```
 
+The model outputs image embeddings, text embeddings and logits.<br>
+For a batch of 16 images and 16 text descriptions, the output shapes would be:
+- Image embeddings: [16, 512]
+- Text embeddings: [16, 512]
+- logits_per_image: [16, 16]
+- logits_per_text: [16, 16]
+
+Firstly I used the logits to predict the no. of likes.<br>
+
+Taking logits_per_image (or logits_per_text) and squeezing it out and averaging over all values to get the predicted no. of likes.
+
+```python
+def average_logits(logits):
+    averages = torch.mean(logits, dim=1)
+    return averages
+```
+Computes the MSE loss between predictions and targets.
+
+But there are few problems with this approach:
+1. Logits are primarily used to measure image-text matching (how well a given image matches a given text prompt).
+2. They don’t inherently represent features like image quality, content popularity, or audience engagement, which are crucial for predicting likes.
+3. Averaging logits per image may cause a loss of meaningful information.
+
+So instead of logits we use embeddings to predict the no. of likes.<br>
+1. Extract the image and text embeddings from the CLIP model
+2. Then we concatenate the two embeddings along the last dimension
+3.  The combined embeddings are passed through a regression head to predict the number of likes.
+
+```python
+# 512 (image embedding) + 512 (text embedding) = 1024 input to the regression head
+self.regression_head = nn.Linear(1024, 1)
+```
+
+```python
+combined_embeddings = torch.cat((image_embeddings, text_embeddings), dim=1)  # Shape: [batch_size, 1024]
+
+# Pass through the regression head to predict likes
+predicted_likes = self.regression_head(combined_embeddings)  # Shape: [batch_size, 1]
+```

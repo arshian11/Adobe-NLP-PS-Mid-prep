@@ -27,7 +27,7 @@ likes.
 
 ![](./assests/Capture3.JPG)
 
-## :microscope: Data Visualization
+## :bar_chart: Data Visualization
 
 The content field alone is not sufficient to grasp the user behaviour so we create a new field
 comprised of date,content and infered company called formatted_text. The full image URLs has also
@@ -40,8 +40,8 @@ the token length distribution so that we can create a uniform token length for t
 
 ![](./assests/download.png)
 
-# 🌟 **Solution**
-## Task-1: Behavior Simulation
+# :dart: **Solution**
+## :clipboard: Task-1: Behavior Simulation
 - Given the content of a tweet (text, company, username, media URLs, timestamp), the
 task is to predict its user engagement, measured by likes.
 
@@ -69,7 +69,7 @@ Here 180 corresponds to the maximum token length (177) in the given dataset.
 
 ## Approach :two:
 
-In the previous approach we only utilised the formatted_text field to predict the no. of likes but as we can see we are leaving the media field which might contain usedful information
+In the previous approach we only utilised the formatted_text field to predict the no. of likes but as we can see we are leaving the media field which might contain useful information
 pertaining to the no. of likes in a tweet.<br>
 For this task we use a CLIP model.
 
@@ -121,7 +121,7 @@ Computes the MSE loss between predictions and targets.
 2. They don’t inherently represent features like image quality, content popularity, or audience engagement, which are crucial for predicting likes.
 3. Averaging logits per image may cause a loss of meaningful information.
 
-So instead of logits we use embeddings to predict the no. of likes.<br>
+🌟 So instead of logits we use embeddings to predict the no. of likes.<br>
 1. Extract the image and text embeddings from the CLIP model
 
 ```python
@@ -137,16 +137,17 @@ combined_embeddings = torch.cat((image_embeddings, text_embeddings), dim=1)  # S
 
 ```
 3.  The combined embeddings are passed through a regression head to predict the number of likes.
-   
-```python
-predicted_likes = self.regression_head(combined_embeddings)  # Shape: [batch_size, 1]
-```
+
 ```python
 # 512 (image embedding) + 512 (text embedding) = 1024 input to the regression head
 self.regression_head = nn.Linear(1024, 1)
 ```
 
-## Task 2: Content Simulation
+```python
+predicted_likes = self.regression_head(combined_embeddings)  # Shape: [batch_size, 1]
+```
+
+## :clipboard: Task 2: Content Simulation
 - Given the tweet metadata (company, username, media URL, timestamp), generate
 the tweet text.
 
@@ -206,12 +207,11 @@ def preprocess_timestamp(timestamp):
     return torch.tensor([days_since_reference], dtype=torch.float32)
 ```
 
-- Since we know there are a limited no. of company names in the dataset, we can convert them to integer values
-
-```python
-def preprocess_company(company_name, company_to_idx):
-    company_idx = company_to_idx.get(company_name, 0)  # Default to 0 if company not found
-    return torch.tensor(company_idx, dtype=torch.long)  # Output shape: [1]
-```
-
 - Cross Entropy Loss is used for text generation
+
+Hyperparameters can be adjusted to see changes in result:
+- company_emb_size = 128  # Size of company embedding
+- hidden_size = 512  # Size of the hidden layer
+- vocab_size = 30522  # Vocabulary size for text generation (e.g., from a tokenizer like GPT)
+- num_heads = 8  # Number of attention heads
+- num_layers = 4  # Number of transformer layers

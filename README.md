@@ -206,6 +206,8 @@ def preprocess_timestamp(timestamp):
     days_since_reference = (timestamp - reference_date).days
     return torch.tensor([days_since_reference], dtype=torch.float32)
 ```
+This method ignores the time of the day at which the tweet is posted and only considers the date.<br>
+It might have trouble performing on the unseen time period dataset so going with embeddings created by a fully connected layer might be better.
 
 - Cross Entropy Loss is used for text generation
 

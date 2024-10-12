@@ -53,6 +53,7 @@ We load a pre-trained model from the transfromers library.<br>
 - The model outputs the hidden states, from which you select the embedding corresponding to the [CLS] token (first token).<br>
 - After obtaining embeddings from BERT, a small feedforward neural network (fully connected layers) is used to predict the number of likes.<br>
 - A Linear layer that transforms the hidden states (DistilBERT output) to a size of 180. The role of this layer is to reduce the dimensionality of the BERT embedding while retaining useful information. 
+Here 180 corresponds to the maximum token length (177) in the given dataset.
 
 ```python
  nn.Linear(self.bert.config.hidden_size, 180),
@@ -115,24 +116,102 @@ def average_logits(logits):
 ```
 Computes the MSE loss between predictions and targets.
 
-But there are few problems with this approach:
+⚠️ But there are few problems with this approach:
 1. Logits are primarily used to measure image-text matching (how well a given image matches a given text prompt).
 2. They don’t inherently represent features like image quality, content popularity, or audience engagement, which are crucial for predicting likes.
 3. Averaging logits per image may cause a loss of meaningful information.
 
 So instead of logits we use embeddings to predict the no. of likes.<br>
 1. Extract the image and text embeddings from the CLIP model
-2. Then we concatenate the two embeddings along the last dimension
-3.  The combined embeddings are passed through a regression head to predict the number of likes.
 
+```python
+outputs = self.clip_model(input_ids=input_ids, pixel_values=pixel_values)
+
+image_embeddings = outputs.image_embeds  # Shape: [16, 512]
+text_embeddings = outputs.text_embeds    # Shape: [16, 512]
+```
+2. Then we concatenate the two embeddings along the last dimension
+
+```python
+combined_embeddings = torch.cat((image_embeddings, text_embeddings), dim=1)  # Shape: [batch_size, 1024]
+
+```
+3.  The combined embeddings are passed through a regression head to predict the number of likes.
+   
+```python
+predicted_likes = self.regression_head(combined_embeddings)  # Shape: [batch_size, 1]
+```
 ```python
 # 512 (image embedding) + 512 (text embedding) = 1024 input to the regression head
 self.regression_head = nn.Linear(1024, 1)
 ```
 
-```python
-combined_embeddings = torch.cat((image_embeddings, text_embeddings), dim=1)  # Shape: [batch_size, 1024]
+## Task 2: Content Simulation
+- Given the tweet metadata (company, username, media URL, timestamp), generate
+the tweet text.
 
-# Pass through the regression head to predict likes
-predicted_likes = self.regression_head(combined_embeddings)  # Shape: [batch_size, 1]
+## Approach
+
+We want to generate the content of a tweet given the metadata. This task essentially requires understanding the relationship between the images and structured metadata.<br>
+We will use our pre-trained CLIP model to gnerate embeddings
+
+1. Extract the image embeddings from the CLIP model as usual.
+
+```python
+clip_outputs = self.clip_model(pixel_values=image)
+image_embeddings = clip_outputs.image_embeds  # Shape: [batch_size=16, 512]
 ```
+2. Convert the timestamp and company name into embeddings
+
+```python
+self.timestamp_embedding = nn.Linear(1, 64)
+self.company_embedding = nn.Embedding(company_vocab_size, company_emb_size)
+self.fc = nn.Linear(512 + company_emb_size + 64, 512)
+```
+
+3. The image, timestamp, and company embeddings are combined together and passed through
+
+```python
+clip_outputs = self.clip_model(pixel_values=image)
+image_embeddings = clip_outputs.image_embeds  # Shape: [batch_size=16, 512]
+timestamp_embeddings = self.timestamp_embedding(timestamp.unsqueeze(1))  # Shape: [batch_size=16, 64]
+company_embeddings = self.company_embedding(company_name)
+combined_embeddings = torch.cat((image_embeddings, timestamp_embeddings, company_embeddings), dim=1)  # Shape: [batch_size=16, 512 + 64 + company_emb_size]
+combined_embeddings = self.fc(combined_embeddings)
+```
+
+4.  These are passed through a transformer to generate text
+
+```python
+self.transformer_decoder = nn.TransformerDecoder(
+            nn.TransformerDecoderLayer(d_model=512, nhead=8),
+            num_layers=4
+        )
+```
+
+```python
+target_seq = target_seq.unsqueeze(1)  # Shape: [16, seq_len=1, 512]    
+transformer_output = self.transformer_decoder(target_seq, combined_embeddings.unsqueeze(1))  # Shape: [batch_size=16, seq_len, 512]
+predicted_tokens = self.output_layer(transformer_output)  # Shape: [batch_size=16, seq_len, vocab_size]
+
+```
+
+- Additionaly we can convert the timestamp(date) to no. of days since a refrence date
+
+```python
+def preprocess_timestamp(timestamp):
+    reference_date = pd.Timestamp("2018-01-01")  # Example reference date
+    timestamp = pd.Timestamp(timestamp)
+    days_since_reference = (timestamp - reference_date).days
+    return torch.tensor([days_since_reference], dtype=torch.float32)
+```
+
+- Since we know there are a limited no. of company names in the dataset, we can convert them to integer values
+
+```python
+def preprocess_company(company_name, company_to_idx):
+    company_idx = company_to_idx.get(company_name, 0)  # Default to 0 if company not found
+    return torch.tensor(company_idx, dtype=torch.long)  # Output shape: [1]
+```
+
+- Cross Entropy Loss is used for text generation

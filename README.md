@@ -15,7 +15,7 @@ from the audience.
 
 ---
 
-# **Dataset**
+# :books: **Dataset**
 
 Brands use Twitter to post marketing content about their products to serve several purposes,
 including ongoing product campaigns, sales, offers, discounts, brand building, community
@@ -27,7 +27,7 @@ likes.
 
 ![](./assests/Capture3.JPG)
 
-## Data Visualization
+## :microscope: Data Visualization
 
 The content field alone is not sufficient to grasp the user behaviour so we create a new field
 comprised of date,content and infered company called formatted_text. The full image url has also
@@ -39,3 +39,10 @@ The formatted_text field will be tokenized to be later used by the model, we nee
 the token length distribution so that we can create a uniform token length for the model to use.
 
 ![](./assests/download.png)
+
+# 🌟 **Solution**
+Task-1: Behavior Simulation
+- Given the content of a tweet (text, company, username, media URLs, timestamp), the
+task is to predict its user engagement, measured by likes.
+
+## Approach :one:

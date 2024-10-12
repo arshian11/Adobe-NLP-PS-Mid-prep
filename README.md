@@ -50,7 +50,7 @@ task is to predict its user engagement, measured by likes.
 Here we employ the use of DistilBERT a smaller and faster version of BERT.
 We load a pre-trained model from the transfromers library.<br>
 
-- The model outputs the hidden states, from which you select the embedding corresponding to the [CLS] token (first token).<br>
+- The model outputs the hidden states, from which we select the embedding corresponding to the [CLS] token (first token).<br>
 - After obtaining embeddings from BERT, a small feedforward neural network (fully connected layers) is used to predict the number of likes.<br>
 - A Linear layer that transforms the hidden states (DistilBERT output) to a size of 180. The role of this layer is to reduce the dimensionality of the BERT embedding while retaining useful information. 
 Here 180 corresponds to the maximum token length (177) in the given dataset.

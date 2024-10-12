@@ -6,7 +6,7 @@ message, thereby generating effects (user behavior). Any message is created to s
 goal. For a marketer, the eventual goal is to get the desired effect (user behavior) i.e. such as
 likes, comments, shares and purchases, etc.
 
-![](./assets/download.png)
+![](./assests/download.png)
 
 In this challenge, we will try to solve the problem of behavior simulation (Task-1) and content
 simulation (Task-2), thereby helping marketers to estimate user engagement on their social

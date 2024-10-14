@@ -156,13 +156,7 @@ the tweet text.
 We want to generate the content of a tweet given the metadata. This task essentially requires understanding the relationship between the images and structured metadata.<br>
 We will use our pre-trained CLIP model to generate embeddings
 
-1. Extract the image embeddings from the CLIP model as usual.
-
-```python
-clip_outputs = self.clip_model(pixel_values=image)
-image_embeddings = clip_outputs.image_embeds  # Shape: [batch_size=16, 512]
-```
-2. Convert the timestamp,company and target content name into embeddings
+1. Convert the timestamp,company and target content name into embeddings
 
 ```python
 encoding = self.processor(
@@ -171,13 +165,18 @@ encoding = self.processor(
         
 target_encoding = self.processor.tokenizer(content_text, return_tensors="pt", padding=True, truncation=True)
 ```
+2. Extract the image embeddings from the CLIP model as usual.
+
+```python
+clip_outputs = self.clip_model(input_ids=input_ids, pixel_values=pixel_values)
+        image_embeds = clip_outputs.image_embeds
+        text_embeds = clip_outputs.text_embeds
+```
+
 
 3. The image, timestamp, and company embeddings are combined together and passed through
 
 ```python
-        clip_outputs = self.clip_model(input_ids=input_ids, pixel_values=pixel_values)
-        image_embeds = clip_outputs.image_embeds
-        text_embeds = clip_outputs.text_embeds
         combined_embeds = torch.cat((image_embeds, text_embeds), dim=1)
         transformer_output = self.transformer(combined_embeds)
         generated_text = self.fc_out(transformer_output)

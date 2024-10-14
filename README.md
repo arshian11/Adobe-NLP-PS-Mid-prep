@@ -166,8 +166,8 @@ image_embeddings = clip_outputs.image_embeds  # Shape: [batch_size=16, 512]
 
 ```python
 self.timestamp_embedding = nn.Linear(1, 64)
-self.company_embedding = nn.Embedding(company_vocab_size, company_emb_size)
-self.fc = nn.Linear(512 + company_emb_size + 64, 512)
+self.company_embedding = nn.Linear(1,128)
+self.fc = nn.Linear(512 + 128 + 64, 512)
 ```
 
 3. The image, timestamp, and company embeddings are combined together and passed through
@@ -177,7 +177,7 @@ clip_outputs = self.clip_model(pixel_values=image)
 image_embeddings = clip_outputs.image_embeds  # Shape: [batch_size=16, 512]
 timestamp_embeddings = self.timestamp_embedding(timestamp.unsqueeze(1))  # Shape: [batch_size=16, 64]
 company_embeddings = self.company_embedding(company_name)
-combined_embeddings = torch.cat((image_embeddings, timestamp_embeddings, company_embeddings), dim=1)  # Shape: [batch_size=16, 512 + 64 + company_emb_size]
+combined_embeddings = torch.cat((image_embeddings, timestamp_embeddings, company_embeddings), dim=1)  # Shape: [batch_size=16, 512 + 64 + 128]
 combined_embeddings = self.fc(combined_embeddings)
 ```
 

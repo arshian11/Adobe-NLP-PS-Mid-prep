@@ -154,7 +154,7 @@ the tweet text.
 ## Approach
 
 We want to generate the content of a tweet given the metadata. This task essentially requires understanding the relationship between the images and structured metadata.<br>
-We will use our pre-trained CLIP model to gnerate embeddings
+We will use our pre-trained CLIP model to generate embeddings
 
 1. Extract the image embeddings from the CLIP model as usual.
 

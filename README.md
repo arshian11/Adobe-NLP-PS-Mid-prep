@@ -162,40 +162,35 @@ We will use our pre-trained CLIP model to generate embeddings
 clip_outputs = self.clip_model(pixel_values=image)
 image_embeddings = clip_outputs.image_embeds  # Shape: [batch_size=16, 512]
 ```
-2. Convert the timestamp and company name into embeddings
+2. Convert the timestamp,company and target content name into embeddings
 
 ```python
-self.timestamp_embedding = nn.Linear(1, 64)
-self.company_embedding = nn.Linear(1,128)
-self.fc = nn.Linear(512 + 128 + 64, 512)
+encoding = self.processor(
+            text=[f"{timestamp} {company_name}"], images=image, return_tensors="pt", padding=True, truncation=True
+        )
+        
+target_encoding = self.processor.tokenizer(content_text, return_tensors="pt", padding=True, truncation=True)
 ```
 
 3. The image, timestamp, and company embeddings are combined together and passed through
 
 ```python
-clip_outputs = self.clip_model(pixel_values=image)
-image_embeddings = clip_outputs.image_embeds  # Shape: [batch_size=16, 512]
-timestamp_embeddings = self.timestamp_embedding(timestamp.unsqueeze(1))  # Shape: [batch_size=16, 64]
-company_embeddings = self.company_embedding(company_name)
-combined_embeddings = torch.cat((image_embeddings, timestamp_embeddings, company_embeddings), dim=1)  # Shape: [batch_size=16, 512 + 64 + 128]
-combined_embeddings = self.fc(combined_embeddings)
+        clip_outputs = self.clip_model(input_ids=input_ids, pixel_values=pixel_values)
+        image_embeds = clip_outputs.image_embeds
+        text_embeds = clip_outputs.text_embeds
+        combined_embeds = torch.cat((image_embeds, text_embeds), dim=1)
+        transformer_output = self.transformer(combined_embeds)
+        generated_text = self.fc_out(transformer_output)
 ```
 
 4.  These are passed through a transformer to generate text
 
 ```python
-self.transformer_decoder = nn.TransformerDecoder(
-            nn.TransformerDecoderLayer(d_model=512, nhead=8),
-            num_layers=4
-        )
+self.transformer = nn.Transformer(
+                       d_model=hidden_size, nhead=num_heads, num_encoder_layers=num_layers,num_decoder_layers=num_layers
+                   )
 ```
 
-```python
-target_seq = target_seq.unsqueeze(1)  # Shape: [16, seq_len=1, 512]    
-transformer_output = self.transformer_decoder(target_seq, combined_embeddings.unsqueeze(1))  # Shape: [batch_size=16, seq_len, 512]
-predicted_tokens = self.output_layer(transformer_output)  # Shape: [batch_size=16, seq_len, vocab_size]
-
-```
 
 - Additionaly we can convert the timestamp(date) to no. of days since a refrence date
 

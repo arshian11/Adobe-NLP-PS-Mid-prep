@@ -206,8 +206,7 @@ It might have trouble performing on the unseen time period dataset so going with
 - Cross Entropy Loss is used for text generation
 
 Hyperparameters can be adjusted to see changes in result:
-- company_emb_size = 128  # Size of company embedding
 - hidden_size = 512  # Size of the hidden layer
-- vocab_size = 30522  # Vocabulary size for text generation (e.g., from a tokenizer like GPT)
+- vocab_size = 49152  # Vocabulary size for text generation (e.g., from a tokenizer like GPT)
 - num_heads = 8  # Number of attention heads
 - num_layers = 4  # Number of transformer layers
